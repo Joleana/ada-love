@@ -1,37 +1,25 @@
-// import { NextResponse } from 'next/server'
-
-// export async function POST(req) {
-//   console.log("Chat route called!")
-//   return NextResponse.json({ reply: "Test response from server" })
-// }
-
-
 import { NextResponse } from 'next/server'
+import OpenAI from 'openai'
+
+// Initialize OpenAI client with v4 syntax
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+})
 
 export async function POST(req) {
   try {
-    // parse the user input & conversation from the request body
     const { userMessage, conversation } = await req.json()
 
-    const openaiApiKey = process.env.OPENAI_API_KEY
-    if (!openaiApiKey) {
-      return NextResponse.json(
-        { error: 'Missing OPENAI_API_KEY in env' },
-        { status: 500 }
-      )
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || ""
+    const quotesUrl = `${baseUrl}/api/quotes`
+    const quotesResponse = await fetch(quotesUrl)
+
+    if (!quotesResponse.ok) {
+      throw new Error(`Failed to fetch quotes: ${quotesResponse.status}`)
     }
 
-    // Build the system prompt. This instructs Ada to:
-    //  - speak in first person
-    //  - occasionally ask the user questions about math & computing
-    //  - answer user questions if asked
-    // Fetch the Ada Lovelace quotes dynamically
-    const quotesResponse = await fetch('http://localhost:3000/api/quotes');
-    const adaQuotes = await quotesResponse.json();
-    // Format quotes as a single string
-    const formattedQuotes = adaQuotes
-      .map(q => `"${q.text}"`) // Enclose each quote in quotes
-      .join('\n');
+    const adaQuotes = await quotesResponse.json()
+    const formattedQuotes = adaQuotes.map(q => `"${q.text}"`).join('\n')
 
     const systemPrompt = `
       You are Ada Lovelace, the 19th-century mathematician, logician, and visionary.  
@@ -106,54 +94,28 @@ export async function POST(req) {
       Here are some of your actual words that may inspire your reflections:
       ${formattedQuotes}
     `;
-      
 
-    // Convert the "conversation" array (if provided) into ChatGPT message objects
-    // We'll assume the conversation is a list of { role: 'assistant'|'user', content: '...' }
-    const conversationMessages = (conversation || []).map(m => ({
-      role: m.role,
-      content: m.content,
-    }))
-
-    // Add the new user message as the latest 'user' role
-    conversationMessages.push({ role: 'user', content: userMessage })
-
-    // The final messages array always starts with the system prompt
     const messages = [
       { role: 'system', content: systemPrompt },
-      ...conversationMessages
+      ...(conversation || []).map(m => ({
+        role: m.role,
+        content: m.content,
+      })),
+      { role: 'user', content: userMessage }
     ]
 
-    console.log("Current System Prompt:", systemPrompt);
-
-    // Call OpenAI's Chat Completion endpoint
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openaiApiKey}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages,
-        temperature: 0.9,
-        max_tokens: 300
-      })
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages,
+      temperature: 0.75,
+      max_tokens: 300
     })
 
-    const data = await response.json()
-    if (!response.ok) {
-      console.error('OpenAI API error:', data)
-      return NextResponse.json({ error: 'OpenAI API error' }, { status: 500 })
-    }
-
-    // Extract Ada’s reply
-    const adaReply = data?.choices?.[0]?.message?.content || 'No response from Ada.'
-
-    // Return it as JSON
+    const adaReply = completion.choices?.[0]?.message?.content || 'No response from Ada.'
     return NextResponse.json({ reply: adaReply })
+
   } catch (err) {
-    console.error('Chat route error:', err)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    console.error("Chat route error:", err)
+    return NextResponse.json({ error: 'Server error', detail: err.message }, { status: 500 })
   }
 }
