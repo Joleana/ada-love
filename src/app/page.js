@@ -1,4 +1,6 @@
 // app/page.js
+export const dynamic = 'force-dynamic';
+
 import React from 'react'
 import PreloadScene from './components/PreloadScene'
 import ClearRestartUI from "./components/ClearRestartUI"

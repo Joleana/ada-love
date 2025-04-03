@@ -6,11 +6,13 @@ import { FluidShimmerMaterial } from './FluidShimmerMaterial'
 import * as THREE from 'three'
 
 export default function AdaModel({ setAdaMeshRef, ...props }) {
-  // Construct an absolute URL for the GLB file using the NEXT_PUBLIC_BASE_URL
-  const modelUrl = process.env.NEXT_PUBLIC_BASE_URL + "/models/ada_love_stylize.glb"
-  // Use the constructed URL when loading the model
+  // Use a fallback if NEXT_PUBLIC_BASE_URL is undefined.
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || ""
+  console.log("Base URL:", baseUrl) // Check in the browser console
+
+  // Construct the absolute URL using the baseUrl.
+  const modelUrl = baseUrl + "/models/ada_love_stylize.glb"
   const { scene } = useGLTF(modelUrl, true)
-  // Load the albedo texture from the public folder
   const albedoMap = useTexture('/models/ada_love_0222140510_stylize_albedo.jpg')
   const groupRef = useRef()
   const materialsRef = useRef([])
@@ -22,18 +24,14 @@ export default function AdaModel({ setAdaMeshRef, ...props }) {
       return
     }
     let foundMesh = null
-    // Traverse the scene and override each mesh's material
     scene.traverse(child => {
       if (child.isMesh) {
         console.log("Overriding material on mesh:", child.name)
         if (!foundMesh) {
           foundMesh = child
         }
-        // Create a new instance of your custom FluidShimmerMaterial
         const customMat = new FluidShimmerMaterial()
-        // Assign the albedo texture to the uniform (assuming your shader expects it in 'map')
         customMat.uniforms.map.value = albedoMap
-        // Optionally, you could adjust additional uniforms here if needed
         child.material = customMat
         materialsRef.current.push(customMat)
       }
@@ -46,7 +44,6 @@ export default function AdaModel({ setAdaMeshRef, ...props }) {
     }
   }, [scene, setAdaMeshRef, albedoMap])
 
-  // Update the time uniform in your custom materials every frame
   useFrame((state, delta) => {
     materialsRef.current.forEach(mat => {
       if (mat.uniforms && mat.uniforms.time) {
