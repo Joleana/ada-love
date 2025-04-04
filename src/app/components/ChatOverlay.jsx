@@ -23,11 +23,31 @@ export default function ChatOverlay({ messages, setMessages, onClose }) {
           conversation: newMessages,
         })
       })
-      const data = await res.json()
-      console.log("Chat response:", data)
+
+      let data
+      try {
+        data = await res.json()
+      } catch (parseErr) {
+        const text = await res.text()
+        console.error("Failed to parse JSON response from API. Raw text:", text)
+        throw new Error("Ada returned a response that couldn't be understood.")
+      }
+
+      if (!res.ok) {
+        console.error("Chat API returned an error response:", data)
+        throw new Error(data.error || "Unexpected error from Ada.")
+      }
+
       setMessages([...newMessages, { role: "assistant", content: data.reply }])
     } catch (err) {
       console.error("Chat API error:", err)
+      setMessages([
+        ...newMessages,
+        {
+          role: "assistant",
+          content: "I’m afraid something went wrong while generating my reply. Please try again shortly.",
+        }
+      ])
     }
   }
 

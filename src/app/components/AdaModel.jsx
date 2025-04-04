@@ -8,7 +8,6 @@ import * as THREE from 'three'
 export default function AdaModel({ setAdaMeshRef, ...props }) {
   // Use a fallback if NEXT_PUBLIC_BASE_URL is undefined.
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || ""
-  console.log("Base URL:", baseUrl) // Check in the browser console
 
   // Construct the absolute URL using the baseUrl.
   const modelUrl = baseUrl + "/models/ada_love_stylize.glb"
