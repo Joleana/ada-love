@@ -1,8 +1,6 @@
 "use client"
 import React, { useState } from "react";
 
-console.log("Access code from env:", process.env.NEXT_PUBLIC_ACCESS_CODE);
-
 export default function AccessCodeModal({ onSubmit, onClose }) {
   const [code, setCode] = useState("");
   return (

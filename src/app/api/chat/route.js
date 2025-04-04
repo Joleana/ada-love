@@ -10,7 +10,7 @@ export async function POST(req) {
   try {
     const { userMessage, conversation } = await req.json()
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || ""
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://ada-love.vercel.app'
     const quotesUrl = `${baseUrl}/api/quotes`
     const quotesResponse = await fetch(quotesUrl)
 
