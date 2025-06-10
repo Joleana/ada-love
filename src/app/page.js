@@ -1,4 +1,5 @@
 // app/page.js
+// Main entry point for app; defines the homepage layout and imports core components + global style
 export const dynamic = 'force-dynamic';
 
 import React from 'react'
@@ -6,8 +7,7 @@ import PreloadScene from './components/PreloadScene'
 import ClearRestartUI from "./components/ClearRestartUI"
 import './globals.css'
 
-// This can be a Server Component, 
-// but you’re importing a client component (PreloadScene), so we do a small tweak:
+// Import client component (PreloadScene) vs server component
 export default function HomePage() {
   return (
     <main>
